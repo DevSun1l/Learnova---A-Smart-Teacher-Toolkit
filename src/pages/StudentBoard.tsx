@@ -96,6 +96,11 @@ const StudentBoard = () => {
             >
               {loading ? "Joining..." : "Enter Class Board"}
             </Button>
+            <div className="pt-4 border-t border-slate-100 text-center">
+              <button onClick={() => navigate("/dashboard")} className="text-sm text-slate-400 hover:text-primary transition-colors font-medium">
+                Are you a teacher? <span className="underline">Go to Teacher Portal</span>
+              </button>
+            </div>
           </div>
         </Card>
       </div>
