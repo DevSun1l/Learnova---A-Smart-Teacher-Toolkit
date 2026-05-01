@@ -15,7 +15,54 @@ const Developmental = () => {
   const tips = band && topicKey ? DEV_TIPS[band][topicKey] : null;
 
   const downloadPDF = () => {
-    const element = document.getElementById('dev-pdf-content');
+    if (!tips || !band || !topicKey) return;
+    
+    const element = document.createElement('div');
+    element.className = "p-10 font-sans text-[#1a1a1a]";
+    
+    element.innerHTML = `
+      <div style="padding: 20px; font-family: serif;">
+        <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px; text-align: center;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+            <img src="/logo.ico" alt="Learnova" style="height: 30px;" />
+            <h1 style="margin: 0; font-size: 24px;">LEARNOVA</h1>
+          </div>
+          <h2 style="margin: 0; font-size: 18px; color: #666;">Developmental Advisor</h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+          <div style="border: 1px solid #ccc; padding: 10px;">
+            <strong>Grade:</strong> ${GRADE_BANDS.find(g => g.id === band)!.label}
+          </div>
+          <div style="border: 1px solid #ccc; padding: 10px;">
+            <strong>Topic:</strong> ${TOPICS[topicKey].title}
+          </div>
+        </div>
+
+        <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 15px;">
+          <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px;">Piaget (Cognitive)</h3>
+          <p>${tips.piaget}</p>
+        </div>
+
+        <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 15px;">
+          <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px;">Vygotsky (Social)</h3>
+          <p>${tips.vygotsky}</p>
+        </div>
+
+        <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 15px;">
+          <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px;">Erikson (Psychosocial)</h3>
+          <p>${tips.erikson}</p>
+        </div>
+
+        <div style="border: 2px solid #22c55e; padding: 15px; background-color: #f0fdf4;">
+          <h3 style="color: #166534; margin-top: 0;">✨ Smart Tips</h3>
+          <ul>
+            ${tips.smartTips.map((t) => `<li>${t}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+    `;
+
     const opt = {
       margin: 10,
       filename: `Developmental_Advisor_${band}_${topicKey}.pdf`,
@@ -88,50 +135,6 @@ const Developmental = () => {
               {tips.smartTips.map((t, i) => <li key={i}>{t}</li>)}
             </ul>
           </Card>
-
-          {/* Hidden PDF content */}
-          <div id="dev-pdf-content" className="hidden">
-            <div style={{ padding: '20px', fontFamily: 'serif' }}>
-              <div style={{ border: '2px solid #333', padding: '15px', marginBottom: '20px', textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
-                  <img src="/logo.ico" alt="Learnova" style={{ height: '30px' }} />
-                  <h1 style={{ margin: 0, fontSize: '24px' }}>LEARNOVA</h1>
-                </div>
-                <h2 style={{ margin: 0, fontSize: '18px', color: '#666' }}>Developmental Advisor</h2>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-                <div style={{ border: '1px solid #ccc', padding: '10px' }}>
-                  <strong>Grade:</strong> {GRADE_BANDS.find(g => g.id === band)!.label}
-                </div>
-                <div style={{ border: '1px solid #ccc', padding: '10px' }}>
-                  <strong>Topic:</strong> {TOPICS[topicKey].title}
-                </div>
-              </div>
-
-              <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px' }}>
-                <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Piaget (Cognitive)</h3>
-                <p>{tips.piaget}</p>
-              </div>
-
-              <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px' }}>
-                <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Vygotsky (Social)</h3>
-                <p>{tips.vygotsky}</p>
-              </div>
-
-              <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '15px' }}>
-                <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Erikson (Psychosocial)</h3>
-                <p>{tips.erikson}</p>
-              </div>
-
-              <div style={{ border: '2px solid #22c55e', padding: '15px', backgroundColor: '#f0fdf4' }}>
-                <h3 style={{ color: '#166534', marginTop: 0 }}>✨ Smart Tips</h3>
-                <ul>
-                  {tips.smartTips.map((t, i) => <li key={i}>{t}</li>)}
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </AppShell>
