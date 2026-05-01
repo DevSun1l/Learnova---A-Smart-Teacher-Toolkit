@@ -50,7 +50,7 @@ const Behavioral = () => {
         </div>
 
         <Dialog open={showSocialDialog} onOpenChange={setShowSocialDialog}>
-          <DialogContent className="rounded-3xl border-0 max-w-md p-8">
+          <DialogContent className="rounded-3xl border-2 border-border/50 max-w-md p-8">
             <DialogHeader className="text-center items-center">
               <div className="h-16 w-16 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-2xl flex items-center justify-center text-white mb-4 shadow-xl shadow-indigo-100">
                 <Share2 className="h-8 w-8" />
@@ -123,7 +123,7 @@ const Behaviorism = ({ onBack }: { onBack: () => void }) => {
       <h1 className="font-display text-3xl mb-6">Behaviorism — Point Feedback</h1>
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-5">
-          <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)] space-y-4">
+          <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] space-y-4">
             <div>
               <Label>Student</Label>
               <Select value={studentId} onValueChange={setStudentId}>
@@ -156,7 +156,7 @@ const Behaviorism = ({ onBack }: { onBack: () => void }) => {
           </Card>
 
           {lastResult && (
-            <Card className="p-6 rounded-3xl border-0 bg-gradient-to-br from-purple-50 to-fuchsia-50 animate-fade-in">
+            <Card className="p-6 rounded-3xl border-2 border-border/50 bg-gradient-to-br from-purple-50 to-fuchsia-50 animate-fade-in">
               <p className="text-sm font-semibold text-purple-700 mb-1">
                 {lastResult.pointsChange > 0 ? "🎉" : "💭"} {lastResult.studentName} {lastResult.pointsChange > 0 ? "earned" : "lost"} a point
               </p>
@@ -169,7 +169,7 @@ const Behaviorism = ({ onBack }: { onBack: () => void }) => {
           )}
         </div>
 
-        <Card className="p-5 rounded-3xl border-0 shadow-[var(--shadow-soft)] h-fit max-h-[80vh] overflow-y-auto">
+        <Card className="p-5 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] h-fit max-h-[80vh] overflow-y-auto">
           <h3 className="font-display text-xl mb-3">Activity Log</h3>
           {logs.length === 0 ? <p className="text-sm text-muted-foreground">No logs yet.</p> : (
             <ul className="space-y-3">
@@ -287,7 +287,7 @@ const CognConstrPicker = ({ mode, onBack }: { mode: "cognitivism" | "constructiv
       <h1 className="font-display text-3xl mb-2">{isCog ? "Cognitivism" : "Constructivism"}</h1>
       <p className="text-muted-foreground mb-6">{isCog ? "Reduce cognitive load while teaching." : "Build understanding through inquiry & real-world tasks."}</p>
 
-      <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)] mb-6">
+      <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] mb-6">
         <Label>Pick a topic</Label>
         <div className="grid sm:grid-cols-3 gap-3 mt-2">
           {Object.values(TOPICS).map(t => (
@@ -301,7 +301,7 @@ const CognConstrPicker = ({ mode, onBack }: { mode: "cognitivism" | "constructiv
       </Card>
 
       {data && topicKey && (
-        <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)] animate-fade-in relative">
+        <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] animate-fade-in relative">
           <div className="flex justify-between items-start mb-4">
             <h2 className="font-display text-2xl">{TOPICS[topicKey].title} — {isCog ? "Teaching plan" : "Inquiry plan"}</h2>
             <Button size="sm" variant="outline" onClick={downloadPDF} className="rounded-xl flex items-center gap-2">
@@ -475,7 +475,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
       {board ? (
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="p-8 rounded-3xl border-0 shadow-[var(--shadow-soft)] bg-gradient-to-br from-indigo-50 to-blue-50 relative overflow-hidden">
+            <Card className="p-8 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] bg-gradient-to-br from-indigo-50 to-blue-50 relative overflow-hidden">
               <div className="relative z-10">
                 <h3 className="font-display text-2xl mb-4 text-indigo-900">Upload Resources</h3>
                 <p className="text-sm text-indigo-700/70 mb-6 max-w-md italic">Upload lesson PDFs for students to view, like, and discuss in real-time.</p>
@@ -503,7 +503,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
               ) : (
                 <div className="space-y-3">
                   {posts.map(p => (
-                    <Card key={p.id} className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
+                    <Card key={p.id} className="rounded-2xl border-2 border-border/50 shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
                       <div className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -559,7 +559,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           <div className="space-y-6">
-            <Card className="p-6 rounded-3xl border-0 shadow-lg bg-slate-900 text-white relative overflow-hidden">
+            <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-lg bg-slate-900 text-white relative overflow-hidden">
               <div className="relative z-10">
                 <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-4">Class Session Code</p>
                 <div className="flex items-center justify-between gap-4">
@@ -577,7 +577,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
               <div className="absolute -bottom-8 -right-8 h-32 w-32 bg-indigo-500/10 rounded-full blur-3xl" />
             </Card>
 
-            <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)]">
+            <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)]">
               <h4 className="font-bold text-slate-800 mb-2 italic">Student Link</h4>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-4 break-all text-xs font-mono text-slate-500 italic">
                 {studentLink}
@@ -605,7 +605,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
       )}
 
       <Dialog open={showActivate} onOpenChange={setShowActivate}>
-        <DialogContent className="rounded-3xl border-0 max-w-md p-8">
+        <DialogContent className="rounded-3xl border-2 border-border/50 max-w-md p-8">
           <DialogHeader className="text-center items-center">
             <div className="h-16 w-16 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-2xl flex items-center justify-center text-white mb-4 shadow-xl shadow-indigo-100">
               <Share2 className="h-8 w-8" />

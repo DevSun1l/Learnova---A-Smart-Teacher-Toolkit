@@ -31,7 +31,7 @@ const UDLPlanner = () => {
         <h1 className="font-display text-4xl mb-2">UDL Planner</h1>
         <p className="text-muted-foreground mb-8">Universal Design for Learning — teach any topic in four engaging ways.</p>
 
-        <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)] space-y-6">
+        <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] space-y-6">
           <div>
             <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-2">Grade</p>
             <div className="flex flex-wrap gap-2">
@@ -113,7 +113,7 @@ const UDLPlanner = () => {
 
         {/* Pillar content */}
         {pillar === "representation" && (
-          <Card className="mt-6 p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)]">
+          <Card className="mt-6 p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)]">
             <h3 className="font-display text-2xl mb-4">Representation — 4 ways to teach {topic.title}</h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <ModeButton icon={Video} label="Video" sub={topic.representation.video.title} onClick={() => setDetailMode("video")} color="bg-rose-500" />
@@ -126,7 +126,7 @@ const UDLPlanner = () => {
         )}
 
         {pillar === "actions" && (
-          <Card className="mt-6 p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)]">
+          <Card className="mt-6 p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)]">
             <h3 className="font-display text-2xl mb-4">Action & Expression — Student tasks</h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <ActionCard icon={Video} title="Video task" body={topic.actions.video} />
@@ -138,7 +138,7 @@ const UDLPlanner = () => {
         )}
 
         {pillar === "engagement" && (
-          <Card className="mt-6 p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)]">
+          <Card className="mt-6 p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)]">
             <h3 className="font-display text-2xl mb-4">Engagement</h3>
             <div className="grid sm:grid-cols-2 gap-4">
               <button onClick={() => setStage("achievements")} className="tool-card text-left">

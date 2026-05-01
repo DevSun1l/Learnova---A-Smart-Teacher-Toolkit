@@ -68,7 +68,7 @@ const Auth = () => {
           </div>
         </div>
 
-        <Card className="p-8 rounded-3xl border-0 shadow-2xl">
+        <Card className="p-8 rounded-3xl border-2 border-border/50 shadow-2xl">
           <div className="flex items-center gap-2 mb-1 text-primary">
             <Sparkles className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-wider">{mode === "signup" ? "Create teacher account" : "Welcome back"}</span>

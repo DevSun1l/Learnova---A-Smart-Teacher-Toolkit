@@ -165,7 +165,7 @@ const Intervention = () => {
       <h1 className="font-display text-4xl mb-2">Intervention Plan Generator</h1>
       <p className="text-muted-foreground mb-6">AI-powered, theory-aligned plans for individual students.</p>
 
-      <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)] space-y-5 mb-6">
+      <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] space-y-5 mb-6">
         <div>
           <Label>Student</Label>
           <Select value={studentId} onValueChange={setStudentId}>

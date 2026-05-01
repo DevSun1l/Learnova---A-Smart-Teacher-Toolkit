@@ -61,7 +61,7 @@ const StudentBoard = () => {
   if (step === "entry") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-        <Card className="w-full max-w-md p-8 rounded-3xl border-0 shadow-xl space-y-6">
+        <Card className="w-full max-w-md p-8 rounded-3xl border-2 border-border/50 shadow-xl space-y-6">
           <div className="text-center">
             <div className="h-16 w-16 bg-primary rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-primary/20">
               <User className="h-8 w-8" />
@@ -135,7 +135,7 @@ const StudentBoard = () => {
         ) : (
           <div className="space-y-6">
             {posts.map(p => (
-              <Card key={p.id} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow bg-white rounded-3xl">
+              <Card key={p.id} className="overflow-hidden border-2 border-border/50 shadow-sm hover:shadow-md transition-shadow bg-white rounded-3xl">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>

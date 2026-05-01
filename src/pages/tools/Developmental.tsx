@@ -18,7 +18,7 @@ const Developmental = () => {
       <h1 className="font-display text-4xl mb-2">Developmental Advisor</h1>
       <p className="text-muted-foreground mb-6">Age-appropriate strategies grounded in Piaget, Vygotsky, and Erikson.</p>
 
-      <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)] mb-6 space-y-5">
+      <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] mb-6 space-y-5">
         <div>
           <Label>Grade level</Label>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-2">
@@ -50,7 +50,7 @@ const Developmental = () => {
 
       {show && tips && band && topicKey && (
         <div className="space-y-4 animate-fade-in">
-          <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)] bg-gradient-to-br from-teal-50 to-cyan-50">
+          <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] bg-gradient-to-br from-teal-50 to-cyan-50">
             <div className="flex items-center gap-2 mb-1 text-accent">
               <Compass className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wider">{GRADE_BANDS.find(g => g.id === band)!.label} · {TOPICS[topicKey].title}</span>
@@ -60,7 +60,7 @@ const Developmental = () => {
           <TheoryCard color="from-purple-500 to-fuchsia-400" name="Piaget" subtitle="Cognitive development" body={tips.piaget} />
           <TheoryCard color="from-orange-500 to-amber-400" name="Vygotsky" subtitle="Social & scaffolded learning" body={tips.vygotsky} />
           <TheoryCard color="from-pink-500 to-rose-400" name="Erikson" subtitle="Psychosocial development" body={tips.erikson} />
-          <Card className="p-6 rounded-3xl border-0 shadow-[var(--shadow-soft)]">
+          <Card className="p-6 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)]">
             <h3 className="font-display text-xl mb-3">✨ Smart Tips</h3>
             <ul className="space-y-2 list-disc pl-5">
               {tips.smartTips.map((t, i) => <li key={i}>{t}</li>)}
@@ -73,7 +73,7 @@ const Developmental = () => {
 };
 
 const TheoryCard = ({ color, name, subtitle, body }: any) => (
-  <Card className="p-5 rounded-3xl border-0 shadow-[var(--shadow-soft)] flex gap-4">
+  <Card className="p-5 rounded-3xl border-2 border-border/50 shadow-[var(--shadow-soft)] flex gap-4">
     <div className={`h-14 w-14 shrink-0 rounded-2xl bg-gradient-to-br ${color} text-white flex items-center justify-center font-display font-bold text-xl`}>
       {name[0]}
     </div>

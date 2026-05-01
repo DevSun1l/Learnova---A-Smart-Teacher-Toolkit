@@ -75,7 +75,7 @@ const Dashboard = () => {
       </section>
 
       {/* Roster card */}
-      <Card className="p-6 rounded-3xl mb-10 border-0 shadow-[var(--shadow-soft)]">
+      <Card className="p-6 rounded-3xl mb-10 border-2 border-border/50 shadow-[var(--shadow-soft)]">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center">
