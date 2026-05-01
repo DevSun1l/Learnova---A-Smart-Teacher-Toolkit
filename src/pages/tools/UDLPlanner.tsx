@@ -210,6 +210,9 @@ const RepresentationDetail = ({ topicKey, mode, onClose }: { topicKey: TopicKey;
         {mode === "kinesthetic" && (
           <>
             <DialogHeader><DialogTitle>{r.kinesthetic.title}</DialogTitle></DialogHeader>
+            {r.kinesthetic.imageUrl && (
+              <img src={r.kinesthetic.imageUrl} alt={r.kinesthetic.title} className="rounded-2xl w-full max-h-[40vh] object-contain bg-muted mb-4" />
+            )}
             <a href={r.kinesthetic.url} target="_blank" rel="noopener" className="block">
               <div className="aspect-video rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center text-white">
                 <Hand className="h-16 w-16" />
