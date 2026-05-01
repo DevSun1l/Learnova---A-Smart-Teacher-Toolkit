@@ -83,7 +83,7 @@
 
 @layer components {
   .tool-card {
-    @apply relative overflow-hidden rounded-3xl bg-card p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer;
+    @apply relative overflow-hidden rounded-3xl bg-card p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 border-border/50;
     box-shadow: var(--shadow-soft);
   }
   .tool-card:hover {
