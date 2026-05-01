@@ -101,7 +101,32 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="border-t pt-4">
-                  <Label className="flex items-center gap-1.5"><UploadCloud className="h-4 w-4"/> Bulk upload (one name per line, or comma-separated)</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="flex items-center gap-1.5"><UploadCloud className="h-4 w-4"/> Bulk upload</Label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="file" 
+                        id="csvFile" 
+                        accept=".csv,.txt" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              const content = e.target?.result as string;
+                              setBulk(content);
+                              toast.success("File loaded! Review names below and click Import.");
+                            };
+                            reader.readAsText(file);
+                          }
+                        }}
+                      />
+                      <Button variant="outline" size="sm" onClick={() => document.getElementById('csvFile')?.click()} className="rounded-lg h-8 text-xs">
+                        Upload CSV
+                      </Button>
+                    </div>
+                  </div>
                   <textarea
                     value={bulk}
                     onChange={e => setBulk(e.target.value)}
@@ -109,7 +134,7 @@ const Dashboard = () => {
                     placeholder={"Aanya Sharma\nRohan Patel\nMeera Singh"}
                     className="w-full mt-1 rounded-xl border border-input bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                  <Button onClick={addBulk} className="mt-2 w-full">Import all</Button>
+                  <Button onClick={addBulk} className="mt-2 w-full h-11 rounded-xl font-bold">Import all students</Button>
                 </div>
               </div>
             </DialogContent>
