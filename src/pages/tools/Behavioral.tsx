@@ -24,6 +24,7 @@ type SubTool = "menu" | "behaviorism" | "cognitivism" | "constructivism" | "soci
 
 const Behavioral = () => {
   const [tool, setTool] = useState<SubTool>("menu");
+  const [showSocialDialog, setShowSocialDialog] = useState(false);
 
   if (tool === "menu") {
     const items = [
@@ -38,7 +39,7 @@ const Behavioral = () => {
         <p className="text-muted-foreground mb-8">Choose a learning theory to apply in your classroom.</p>
         <div className="grid sm:grid-cols-2 gap-5">
           {items.map(({ id, title, desc, icon: Icon, color }) => (
-            <button key={id} onClick={() => setTool(id)} className="tool-card text-left">
+            <button key={id} onClick={() => id === 'social' ? setShowSocialDialog(true) : setTool(id)} className="tool-card text-left">
               <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white mb-4`}>
                 <Icon className="h-7 w-7" />
               </div>
@@ -47,6 +48,26 @@ const Behavioral = () => {
             </button>
           ))}
         </div>
+
+        <Dialog open={showSocialDialog} onOpenChange={setShowSocialDialog}>
+          <DialogContent className="rounded-3xl border-0 max-w-md p-8">
+            <DialogHeader className="text-center items-center">
+              <div className="h-16 w-16 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-2xl flex items-center justify-center text-white mb-4 shadow-xl shadow-indigo-100">
+                <Share2 className="h-8 w-8" />
+              </div>
+              <DialogTitle className="text-3xl font-display font-bold">Activate Social Board</DialogTitle>
+              <DialogDescription className="text-slate-500 mt-2 italic">
+                Start a new social learning session. This will generate a fresh access code for your students to join today's discussion.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-col gap-2 mt-4">
+              <Button onClick={() => { setShowSocialDialog(false); setTool("social"); }} className="w-full h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold text-lg shadow-lg shadow-indigo-100 transition-all hover:scale-[1.02]">
+                Activate Now
+              </Button>
+              <Button variant="ghost" onClick={() => setShowSocialDialog(false)} className="w-full italic text-slate-400">Cancel</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </AppShell>
     );
   }
@@ -355,8 +376,6 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
     if (data) {
       setBoard(data);
       loadPosts(data.id);
-    } else {
-      setShowActivate(true);
     }
     setLoading(false);
   };
