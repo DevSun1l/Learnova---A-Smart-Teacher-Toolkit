@@ -8,7 +8,7 @@ export interface TopicContent {
   representation: {
     video: { url: string; title: string };
     diagram: { url: string; title: string };
-    kinesthetic: { url: string; title: string; imageUrl?: string };
+    kinesthetic: { url: string; title: string };
     reading: { title: string; pdfUrl: string; notes: string[]; imageUrl?: string };
   };
   actions: {
@@ -31,7 +31,7 @@ export const TOPICS: Record<TopicKey, TopicContent> = {
     representation: {
       video: { url: "https://youtu.be/UiyZIHK8tHg", title: "States of Matter for Kids" },
       diagram: { url: "/chemd.png", title: "Phase Change Diagram" },
-      kinesthetic: { url: "https://youtu.be/i4DYIFaT3Ok", title: "Kinesthetic: Playing with Matter", imageUrl: "/mattervk.png" },
+      kinesthetic: { url: "https://youtu.be/i4DYIFaT3Ok", title: "Kinesthetic: Playing with Matter" },
       reading: {
         title: "Matter & Materials — Class Notes",
         pdfUrl: "https://drive.google.com/file/d/1vGn1TmWRdicQof96iKRmy3bnBTagGnA0/view?usp=sharing",
