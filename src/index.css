@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm classroom palette */
+    --background: 38 50% 97%;
+    --foreground: 24 30% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 24 30% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 30% 15%;
+
+    /* Warm orange primary */
+    --primary: 22 92% 56%;
+    --primary-foreground: 38 50% 98%;
+    --primary-glow: 32 100% 68%;
+
+    /* Soft teal secondary */
+    --secondary: 174 50% 92%;
+    --secondary-foreground: 178 60% 22%;
+
+    --muted: 38 30% 94%;
+    --muted-foreground: 24 15% 42%;
+
+    --accent: 178 65% 42%;
+    --accent-foreground: 38 50% 98%;
+
+    --success: 142 60% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 95% 55%;
+    --warning-foreground: 24 30% 15%;
+
+    --destructive: 358 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 32 30% 88%;
+    --input: 32 30% 88%;
+    --ring: 22 92% 56%;
+
+    --radius: 1rem;
+
+    /* Tool category colors */
+    --tool-udl: 22 92% 56%;
+    --tool-behavior: 280 60% 60%;
+    --tool-developmental: 178 65% 42%;
+    --tool-intervention: 340 75% 58%;
+
+    /* Gradients */
+    --gradient-warm: linear-gradient(135deg, hsl(22 92% 56%), hsl(38 95% 62%));
+    --gradient-cool: linear-gradient(135deg, hsl(178 65% 42%), hsl(190 70% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(22 92% 56%) 0%, hsl(38 95% 62%) 50%, hsl(50 95% 70%) 100%);
+    --gradient-soft: linear-gradient(180deg, hsl(38 50% 97%), hsl(38 50% 94%));
+
+    /* Shadows */
+    --shadow-soft: 0 2px 12px -2px hsl(24 30% 15% / 0.06);
+    --shadow-card: 0 8px 28px -8px hsl(22 92% 30% / 0.18);
+    --shadow-glow: 0 12px 40px -8px hsl(22 92% 56% / 0.4);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Fraunces', Georgia, serif;
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  .tool-card {
+    @apply relative overflow-hidden rounded-3xl bg-card p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer;
+    box-shadow: var(--shadow-soft);
+  }
+  .tool-card:hover {
+    box-shadow: var(--shadow-card);
+  }
+  .gradient-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
