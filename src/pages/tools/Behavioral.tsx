@@ -436,7 +436,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
 
   if (loading) return <AppShell showBack><div className="flex items-center justify-center p-20">Loading board...</div></AppShell>;
 
-  const studentLink = `${window.location.origin}/board/${board?.code || ''}`;
+  const studentLink = `${window.location.origin}/join/${board?.code || ''}`;
 
   return (
     <AppShell showBack>
