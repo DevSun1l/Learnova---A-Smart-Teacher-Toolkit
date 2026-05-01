@@ -119,7 +119,11 @@ const Developmental = () => {
                 </div>
                 <h2 className="font-display text-2xl">Theory-aligned strategies</h2>
               </div>
-              <Button onClick={downloadPDF} size="sm" variant="outline" className="rounded-xl flex items-center gap-2 border-accent/20 text-accent hover:bg-accent/5">
+              <Button 
+                onClick={downloadPDF} 
+                size="sm" 
+                className="rounded-xl flex items-center gap-2 bg-[#0f766e] hover:bg-[#134e4a] text-white transition-all active:scale-95 shadow-md shadow-teal-900/20"
+              >
                 <FileDown className="h-4 w-4" /> Download PDF
               </Button>
             </div>
