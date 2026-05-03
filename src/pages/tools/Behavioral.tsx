@@ -359,7 +359,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
       setBoard(data);
       loadPosts(data.id);
     } else {
-      activate();
+      setBoard(null);
     }
     setLoading(false);
   };
@@ -598,7 +598,21 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-center p-20 italic">Initializing board...</div>
+        <div className="flex flex-col items-center justify-center p-12 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 animate-fade-in">
+          <div className="h-20 w-20 bg-white rounded-3xl flex items-center justify-center text-indigo-600 shadow-xl mb-6">
+            <Users className="h-10 w-10" />
+          </div>
+          <h2 className="text-3xl font-display font-bold text-slate-800 mb-2 text-center">Social Learning Board</h2>
+          <p className="text-slate-500 text-center max-w-sm mb-8 italic">
+            Start a live session to share resources and gather real-time student feedback. 
+          </p>
+          <Button 
+            onClick={activate} 
+            className="h-14 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-xl shadow-indigo-100 transition-all hover:scale-[1.02]"
+          >
+            Start New Session
+          </Button>
+        </div>
       )}
     </AppShell>
   );
