@@ -399,7 +399,37 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
     setPosts(data ?? []);
   };
 
-  useEffect(() => { loadBoard(); }, [user]);
+  useEffect(() => { 
+    loadBoard(); 
+  }, [user]);
+
+  useEffect(() => {
+    if (!board?.id) return;
+
+    // Set up real-time subscriptions
+    const channel = supabase
+      .channel('board-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'board_posts', filter: `board_id=eq.${board.id}` },
+        () => loadPosts(board.id)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'board_likes' }, // We'll filter likes in the handler or just reload
+        () => loadPosts(board.id)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'board_comments' },
+        () => loadPosts(board.id)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [board?.id]);
 
   const activate = async () => {
     if (!user) return;
