@@ -390,24 +390,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
     setPosts(data ?? []);
   };
 
-  useEffect(() => { 
-    loadBoard(); 
-    
-    // Set up real-time subscription for the current board if it exists
-    let channel: any;
-    if (board?.id) {
-      channel = supabase
-        .channel(`teacher_board_${board.id}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'board_likes' }, () => loadPosts(board.id))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'board_comments' }, () => loadPosts(board.id))
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'board_posts', filter: `board_id=eq.${board.id}` }, () => loadPosts(board.id))
-        .subscribe();
-    }
-
-    return () => {
-      if (channel) supabase.removeChannel(channel);
-    };
-  }, [user, board?.id]);
+  useEffect(() => { loadBoard(); }, [user]);
 
   const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
@@ -472,46 +455,41 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !board || !user) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !board || !user) return;
     
-    const pdfFiles = Array.from(files).filter(f => f.type === "application/pdf");
-    if (pdfFiles.length === 0) return toast.error("Only PDFs allowed");
+    const validFiles = files.filter(f => f.type === "application/pdf");
+    if (validFiles.length === 0) return toast.error("Only PDFs allowed");
+    if (validFiles.length !== files.length) toast.warning("Some files were skipped because they were not PDFs");
 
     setUploading(true);
     let successCount = 0;
+    
+    for (const file of validFiles) {
+      const fileName = `${user.id}/${Math.random()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("board-uploads")
+        .upload(fileName, file);
 
-    for (const file of pdfFiles) {
-      try {
-        const fileName = `${user.id}/${Math.random()}-${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from("board-uploads")
-          .upload(fileName, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage.from("board-uploads").getPublicUrl(fileName);
-
-        await supabase.from("board_posts").insert({
-          board_id: board.id,
-          teacher_id: user.id,
-          title: file.name,
-          file_url: publicUrl,
-        });
-        successCount++;
-      } catch (err) {
-        console.error("Upload error:", err);
+      if (uploadError) {
         toast.error(`Failed to upload ${file.name}`);
+        continue;
       }
+
+      const { data: { publicUrl } } = supabase.storage.from("board-uploads").getPublicUrl(fileName);
+
+      await supabase.from("board_posts").insert({
+        board_id: board.id,
+        teacher_id: user.id,
+        title: file.name,
+        file_url: publicUrl,
+      });
+      successCount++;
     }
 
-    if (successCount > 0) {
-      loadPosts(board.id);
-      toast.success(`Successfully uploaded ${successCount} file(s)!`);
-    }
+    loadPosts(board.id);
     setUploading(false);
-    // Clear input
-    e.target.value = "";
+    if (successCount > 0) toast.success(`${successCount} file(s) uploaded!`);
   };
 
   const deletePost = async (id: string, fileUrl: string | null) => {
@@ -540,7 +518,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
             <Button onClick={resetCode} variant="outline" className="rounded-xl gap-2 text-slate-600 border-slate-200">
               <Share2 className="h-4 w-4" /> Reset Code
             </Button>
-            <Button onClick={clearBoard} variant="outline" className="rounded-xl gap-2 text-rose-600 border-rose-100 hover:bg-rose-50">
+            <Button onClick={clearBoard} variant="outline" className="rounded-xl gap-2 text-rose-600 border-rose-100 hover:bg-rose-600 hover:text-white transition-colors">
               <Trash2 className="h-4 w-4" /> Clear Board
             </Button>
           </div>
@@ -555,11 +533,11 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
                 <h3 className="font-display text-2xl mb-4 text-indigo-900">Upload Resources</h3>
                 <p className="text-sm text-indigo-700/70 mb-6 max-w-md italic">Upload lesson PDFs for students to view, like, and discuss in real-time.</p>
                 <div className="relative group">
-                  <input type="file" onChange={handleUpload} accept=".pdf" multiple className="hidden" id="pdf-upload" disabled={uploading} />
+                  <input type="file" onChange={handleUpload} accept=".pdf" className="hidden" id="pdf-upload" disabled={uploading} multiple />
                   <label htmlFor="pdf-upload" className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-indigo-200 rounded-2xl bg-white/50 cursor-pointer hover:bg-white hover:border-indigo-400 transition-all ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <Upload className={`h-8 w-8 text-indigo-400 mb-2 ${uploading ? 'animate-bounce' : ''}`} />
-                      <p className="text-sm font-semibold text-indigo-600">{uploading ? "Uploading resources..." : "Click to upload one or more PDFs"}</p>
+                      <p className="text-sm font-semibold text-indigo-600">{uploading ? "Uploading..." : "Click to upload PDFs"}</p>
                     </div>
                   </label>
                 </div>

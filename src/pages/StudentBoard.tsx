@@ -18,7 +18,6 @@ const StudentBoard = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [likingPostIds, setLikingPostIds] = useState<Set<string>>(new Set());
-  const [animatingPostId, setAnimatingPostId] = useState<string | null>(null);
 
   // Check for existing session
   useEffect(() => {
@@ -41,22 +40,8 @@ const StudentBoard = () => {
       setBoard(data);
       setStep("board");
       loadPosts(data.id);
-      subscribeToBoard(data.id);
     }
     setLoading(false);
-  };
-
-  const subscribeToBoard = (boardId: string) => {
-    const channel = supabase
-      .channel(`board_${boardId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'board_likes' }, () => loadPosts(boardId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'board_comments' }, () => loadPosts(boardId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'board_posts', filter: `board_id=eq.${boardId}` }, () => loadPosts(boardId))
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   };
 
   // Entry check
@@ -74,7 +59,6 @@ const StudentBoard = () => {
     setLoading(false);
     localStorage.setItem("student_session", JSON.stringify({ code: code.toUpperCase(), name: name.trim() }));
     loadPosts(data.id);
-    subscribeToBoard(data.id);
   };
 
   const loadPosts = async (boardId: string) => {
@@ -97,27 +81,17 @@ const StudentBoard = () => {
     return post.board_likes?.find((like: any) => normalizeName(like.display_name) === studentName);
   };
 
-  const toggleLike = async (post: any, isDoubleClick = false) => {
+  const toggleLike = async (post: any) => {
     if (!board || likingPostIds.has(post.id)) return;
 
     const displayName = name.trim();
     if (!displayName) return toast.error("Please enter your name before liking");
 
-    const existingLike = getStudentLike(post);
-    
-    // If double clicking and already liked, just show animation but don't unlike
-    if (isDoubleClick && existingLike) {
-      showAnimation(post.id);
-      return;
-    }
-
-    if (isDoubleClick) showAnimation(post.id);
-
     setLikingPostIds(current => new Set(current).add(post.id));
 
-    // Use post_id and display_name for the delete query to be more robust than just ID
+    const existingLike = getStudentLike(post);
     const { error } = existingLike
-      ? await supabase.from("board_likes").delete().match({ post_id: post.id, display_name: displayName })
+      ? await supabase.from("board_likes").delete().eq("id", existingLike.id)
       : await supabase.from("board_likes").insert({ post_id: post.id, display_name: displayName });
 
     if (error) {
@@ -131,11 +105,6 @@ const StudentBoard = () => {
       next.delete(post.id);
       return next;
     });
-  };
-
-  const showAnimation = (postId: string) => {
-    setAnimatingPostId(postId);
-    setTimeout(() => setAnimatingPostId(null), 800);
   };
 
   const comment = async (postId: string, text: string) => {
@@ -225,17 +194,7 @@ const StudentBoard = () => {
               const likeCount = (p as any).board_likes?.length || 0;
 
               return (
-              <Card 
-                key={p.id} 
-                onDoubleClick={() => toggleLike(p, true)}
-                className="overflow-hidden border-2 border-border/50 shadow-sm hover:shadow-md transition-shadow bg-white rounded-3xl relative"
-              >
-                {/* Floating Heart Animation Overlay */}
-                {animatingPostId === p.id && (
-                  <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none animate-in zoom-in-50 fade-in duration-300">
-                    <Heart className="h-24 w-24 text-rose-500 fill-rose-500 opacity-80 animate-bounce" />
-                  </div>
-                )}
+              <Card key={p.id} className="overflow-hidden border-2 border-border/50 shadow-sm hover:shadow-md transition-shadow bg-white rounded-3xl">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
