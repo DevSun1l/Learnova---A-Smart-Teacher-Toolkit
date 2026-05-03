@@ -52,6 +52,38 @@ export type Database = {
           },
         ]
       }
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
       board_comments: {
         Row: {
           comment: string
@@ -184,6 +216,8 @@ export type Database = {
           email: string
           first_name: string
           id: string
+          is_admin: boolean
+          is_blocked: boolean
           last_name: string
           school: string
           updated_at: string
@@ -194,6 +228,8 @@ export type Database = {
           email: string
           first_name: string
           id?: string
+          is_admin?: boolean
+          is_blocked?: boolean
           last_name: string
           school: string
           updated_at?: string
@@ -204,6 +240,8 @@ export type Database = {
           email?: string
           first_name?: string
           id?: string
+          is_admin?: boolean
+          is_blocked?: boolean
           last_name?: string
           school?: string
           updated_at?: string

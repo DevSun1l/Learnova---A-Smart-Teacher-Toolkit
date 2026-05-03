@@ -9,10 +9,12 @@ import { GraduationCap, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
+import { logActivity } from "@/lib/logger";
+
 const Auth = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", school: "", password: "" });
 
@@ -25,20 +27,64 @@ const Auth = () => {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        // Check if email already exists in profiles
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("email", form.email)
+          .maybeSingle();
+
+        if (existing) {
+          throw new Error("This email is already registered. Please sign in instead.");
+        }
+
+        const { data, error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { first_name: form.firstName, last_name: form.lastName, school: form.school },
+            data: { 
+              first_name: form.firstName, 
+              last_name: form.lastName, 
+              school: form.school,
+              email: form.email // Ensure email is also in metadata for trigger to sync to profiles
+            },
           },
         });
         if (error) throw error;
+        if (data.user) {
+          await logActivity(data.user.id, "signed_in", { method: "signup" });
+        }
         toast.success("Welcome! You're all set.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
-        if (error) throw error;
-        toast.success("Welcome back!");
+        const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({ 
+          email: form.email, 
+          password: form.password 
+        });
+        
+        if (authError) throw authError;
+
+        if (user) {
+          // Check if user is blocked
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("is_blocked")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (profile?.is_blocked) {
+            await supabase.auth.signOut();
+            toast.error("You have been blocked due to violations in the guidelines of this application. Please contact helpdesk@learnova.com for more info", {
+              duration: 6000,
+            });
+            setLoading(false);
+            return;
+          }
+
+          await logActivity(user.id, "signed_in");
+          toast.success("Welcome back!");
+          navigate("/dashboard");
+        }
       }
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
@@ -108,7 +154,10 @@ const Auth = () => {
           </form>
           <p className="text-sm text-muted-foreground mt-5 text-center">
             {mode === "signup" ? "Already a teacher here?" : "New here?"}{" "}
-            <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-primary font-semibold hover:underline">
+            <button onClick={() => {
+              setMode(mode === "signup" ? "signin" : "signup");
+              setForm({ firstName: "", lastName: "", email: "", school: "", password: "" });
+            }} className="text-primary font-semibold hover:underline">
               {mode === "signup" ? "Sign in" : "Create an account"}
             </button>
           </p>

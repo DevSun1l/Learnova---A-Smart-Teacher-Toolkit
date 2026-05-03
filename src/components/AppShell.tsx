@@ -1,7 +1,7 @@
-import { ReactNode, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { ReactNode, useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, GraduationCap, ArrowLeft } from "lucide-react";
+import { LogOut, GraduationCap, ArrowLeft, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -9,13 +9,40 @@ import {
   DialogDescription, DialogFooter 
 } from "@/components/ui/dialog";
 
+import { logActivity } from "@/lib/logger";
+
 export const AppShell = ({ children, showBack = false }: { children: ReactNode; showBack?: boolean }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
 
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user) {
+        console.log("[AppShell] Checking admin for user:", user.id, user.email);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("is_admin, is_blocked, email")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        console.log("[AppShell] Profile result:", { data, error });
+        if (error) {
+          console.error("[AppShell] Admin check error:", error);
+          setIsAdmin(false);
+        } else {
+          console.log("[AppShell] is_admin =", data?.is_admin);
+          setIsAdmin(data?.is_admin === true);
+        }
+      }
+    };
+    checkAdmin();
+  }, [user]);
+
   const signOut = async () => {
+    if (user) await logActivity(user.id, "signed_out");
     await supabase.auth.signOut();
     navigate("/auth");
   };
@@ -40,6 +67,13 @@ export const AppShell = ({ children, showBack = false }: { children: ReactNode; 
           </div>
           
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link to={location.pathname === "/admin" ? "/dashboard" : "/admin"}>
+                <Button variant="ghost" size="sm" className="rounded-xl text-indigo-600 hover:text-indigo-600 font-bold border-2 border-indigo-100 hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all duration-300">
+                  <Shield className="h-4 w-4 mr-1.5" /> {location.pathname === "/admin" ? "Home Panel" : "Admin Panel"}
+                </Button>
+              </Link>
+            )}
             {user && (
               <Button variant="ghost" size="sm" onClick={() => setShowSignOutDialog(true)} className="rounded-xl">
                 <LogOut className="h-4 w-4 mr-1" /> Sign out

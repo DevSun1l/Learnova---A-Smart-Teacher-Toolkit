@@ -20,10 +20,14 @@ import {
   DialogDescription, DialogFooter 
 } from "@/components/ui/dialog";
 
+import { useSearchParams } from "react-router-dom";
+
 type SubTool = "menu" | "behaviorism" | "cognitivism" | "constructivism" | "social";
 
 const Behavioral = () => {
-  const [tool, setTool] = useState<SubTool>("menu");
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") as SubTool;
+  const [tool, setTool] = useState<SubTool>(initialTab || "menu");
   const [showSocialDialog, setShowSocialDialog] = useState(false);
 
   if (tool === "menu") {
@@ -372,10 +376,12 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
   const loadBoard = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase.from("class_boards").select("*").eq("teacher_id", user.id).single();
+    const { data } = await supabase.from("class_boards").select("*").eq("teacher_id", user.id).maybeSingle();
     if (data) {
       setBoard(data);
       loadPosts(data.id);
+    } else {
+      setShowActivate(true);
     }
     setLoading(false);
   };
