@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, GraduationCap, ArrowLeft, Shield } from "lucide-react";
+import { LogOut, GraduationCap, ArrowLeft, Shield, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -17,28 +17,32 @@ export const AppShell = ({ children, showBack = false }: { children: ReactNode; 
   const { user } = useAuth();
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [activeBoard, setActiveBoard] = useState<{ code: string } | null>(null);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
       if (user) {
-        console.log("[AppShell] Checking admin for user:", user.id, user.email);
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("profiles")
-          .select("is_admin, is_blocked, email")
+          .select("is_admin")
           .eq("user_id", user.id)
           .maybeSingle();
-        console.log("[AppShell] Profile result:", { data, error });
-        if (error) {
-          console.error("[AppShell] Admin check error:", error);
-          setIsAdmin(false);
-        } else {
-          console.log("[AppShell] is_admin =", data?.is_admin);
-          setIsAdmin(data?.is_admin === true);
-        }
+        setIsAdmin(data?.is_admin === true);
+      }
+    };
+    const checkBoard = async () => {
+      if (user) {
+        const { data } = await supabase.from("class_boards").select("code").eq("teacher_id", user.id).maybeSingle();
+        setActiveBoard(data || null);
       }
     };
     checkAdmin();
+    checkBoard();
+    
+    // Refresh board status occasionally
+    const interval = setInterval(checkBoard, 15000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const signOut = async () => {
@@ -64,6 +68,14 @@ export const AppShell = ({ children, showBack = false }: { children: ReactNode; 
                 <p className="text-[11px] text-muted-foreground">Teach Differently</p>
               </div>
             </Link>
+            {activeBoard && (
+              <Link to="/tools/behavior?tab=social" className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest flex items-center gap-1.5">
+                  <Users className="h-3 w-3" /> Live Board: {activeBoard.code}
+                </span>
+              </Link>
+            )}
           </div>
           
           <div className="flex items-center gap-2">

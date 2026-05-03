@@ -28,7 +28,6 @@ const Behavioral = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") as SubTool;
   const [tool, setTool] = useState<SubTool>(initialTab || "menu");
-  const [showSocialDialog, setShowSocialDialog] = useState(false);
 
   if (tool === "menu") {
     const items = [
@@ -43,7 +42,7 @@ const Behavioral = () => {
         <p className="text-muted-foreground mb-8">Choose a learning theory to apply in your classroom.</p>
         <div className="grid sm:grid-cols-2 gap-5">
           {items.map(({ id, title, desc, icon: Icon, color }) => (
-            <button key={id} onClick={() => id === 'social' ? setShowSocialDialog(true) : setTool(id)} className="tool-card text-left">
+            <button key={id} onClick={() => setTool(id)} className="tool-card text-left">
               <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white mb-4`}>
                 <Icon className="h-7 w-7" />
               </div>
@@ -52,26 +51,6 @@ const Behavioral = () => {
             </button>
           ))}
         </div>
-
-        <Dialog open={showSocialDialog} onOpenChange={setShowSocialDialog}>
-          <DialogContent className="rounded-3xl border-2 border-border/50 max-w-md p-8">
-            <DialogHeader className="text-center items-center">
-              <div className="h-16 w-16 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-2xl flex items-center justify-center text-white mb-4 shadow-xl shadow-indigo-100">
-                <Share2 className="h-8 w-8" />
-              </div>
-              <DialogTitle className="text-3xl font-display font-bold">Activate Social Board</DialogTitle>
-              <DialogDescription className="text-slate-500 mt-2 italic">
-                Start a new social learning session. This will generate a fresh access code for your students to join today's discussion.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex-col sm:flex-col gap-2 mt-4">
-              <Button onClick={() => { setShowSocialDialog(false); setTool("social"); }} className="w-full h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold text-lg shadow-lg shadow-indigo-100 transition-all hover:scale-[1.02]">
-                Activate Now
-              </Button>
-              <Button variant="ghost" onClick={() => setShowSocialDialog(false)} className="w-full italic text-slate-400">Cancel</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </AppShell>
     );
   }
@@ -368,7 +347,6 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
   const { user } = useAuth();
   const [board, setBoard] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
-  const [showActivate, setShowActivate] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
@@ -381,7 +359,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
       setBoard(data);
       loadPosts(data.id);
     } else {
-      setShowActivate(true);
+      activate();
     }
     setLoading(false);
   };
@@ -399,37 +377,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
     setPosts(data ?? []);
   };
 
-  useEffect(() => { 
-    loadBoard(); 
-  }, [user]);
-
-  useEffect(() => {
-    if (!board?.id) return;
-
-    // Set up real-time subscriptions
-    const channel = supabase
-      .channel('board-updates')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'board_posts', filter: `board_id=eq.${board.id}` },
-        () => loadPosts(board.id)
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'board_likes' }, // We'll filter likes in the handler or just reload
-        () => loadPosts(board.id)
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'board_comments' },
-        () => loadPosts(board.id)
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [board?.id]);
+  useEffect(() => { loadBoard(); }, [user]);
 
   const activate = async () => {
     if (!user) return;
@@ -446,8 +394,16 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
     
     if (error) return toast.error("Activation failed");
     setBoard(data);
-    setShowActivate(false);
     toast.success("Social Board Activated!");
+  };
+
+  const clearBoard = async () => {
+    if (!user || !board) return;
+    const { error } = await supabase.from("class_boards").delete().eq("id", board.id);
+    if (error) return toast.error("Failed to clear board");
+    setBoard(null);
+    setPosts([]);
+    toast.success("Social Board Deactivated");
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -502,9 +458,14 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
           <p className="text-muted-foreground italic">Share resources and foster peer discussion.</p>
         </div>
         {board && (
-          <Button onClick={() => setShowActivate(true)} variant="outline" className="rounded-xl gap-2 text-slate-600 border-slate-200">
-            <Share2 className="h-4 w-4" /> Reset Code
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={activate} variant="outline" className="rounded-xl gap-2 text-slate-600 border-slate-200">
+              <Share2 className="h-4 w-4" /> Reset Code
+            </Button>
+            <Button onClick={clearBoard} variant="outline" className="rounded-xl gap-2 text-rose-600 border-rose-100 hover:bg-rose-50">
+              <Trash2 className="h-4 w-4" /> Clear Board
+            </Button>
+          </div>
         )}
       </div>
 
@@ -639,32 +600,6 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
       ) : (
         <div className="flex items-center justify-center p-20 italic">Initializing board...</div>
       )}
-
-      <Dialog open={showActivate} onOpenChange={setShowActivate}>
-        <DialogContent className="rounded-3xl border-2 border-border/50 max-w-md p-8">
-          <DialogHeader className="text-center items-center">
-            <div className="h-16 w-16 bg-gradient-to-br from-indigo-500 to-blue-400 rounded-2xl flex items-center justify-center text-white mb-4 shadow-xl shadow-indigo-100">
-              <Share2 className="h-8 w-8" />
-            </div>
-            <DialogTitle className="text-3xl font-display font-bold">Activate Social Board</DialogTitle>
-            <DialogDescription className="text-slate-500 mt-2 italic">
-              Start a new social learning session. This will generate a fresh access code for your students to join today's discussion.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-             <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-               <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-               <p className="text-xs font-medium text-slate-600 italic">Code will reset on each activation</p>
-             </div>
-          </div>
-          <DialogFooter className="flex-col sm:flex-col gap-2">
-            <Button onClick={activate} className="w-full h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold text-lg shadow-lg shadow-indigo-100 transition-all hover:scale-[1.02]">
-              Activate Now
-            </Button>
-            <Button variant="ghost" onClick={onBack} className="w-full italic text-slate-400">Not right now</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppShell>
   );
 };
