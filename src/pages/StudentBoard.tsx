@@ -17,6 +17,47 @@ const StudentBoard = () => {
   const [board, setBoard] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [likingPostIds, setLikingPostIds] = useState<Set<string>>(new Set());
+  const [animatingPostId, setAnimatingPostId] = useState<string | null>(null);
+
+  // Check for existing session
+  useEffect(() => {
+    const saved = localStorage.getItem("student_session");
+    if (saved) {
+      const { code: sCode, name: sName } = JSON.parse(saved);
+      // If the URL code matches the saved code (or no URL code), auto-enter
+      if (sCode && sName && (!urlCode || urlCode.toUpperCase() === sCode)) {
+        setCode(sCode);
+        setName(sName);
+        autoEnter(sCode, sName);
+      }
+    }
+  }, []);
+
+  const autoEnter = async (c: string, n: string) => {
+    setLoading(true);
+    const { data, error } = await supabase.from("class_boards").select("*").eq("code", c.toUpperCase()).single();
+    if (!error && data) {
+      setBoard(data);
+      setStep("board");
+      loadPosts(data.id);
+      subscribeToBoard(data.id);
+    }
+    setLoading(false);
+  };
+
+  const subscribeToBoard = (boardId: string) => {
+    const channel = supabase
+      .channel(`board_${boardId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'board_likes' }, () => loadPosts(boardId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'board_comments' }, () => loadPosts(boardId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'board_posts', filter: `board_id=eq.${boardId}` }, () => loadPosts(boardId))
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   // Entry check
   const enter = async () => {
@@ -31,7 +72,9 @@ const StudentBoard = () => {
     setBoard(data);
     setStep("board");
     setLoading(false);
+    localStorage.setItem("student_session", JSON.stringify({ code: code.toUpperCase(), name: name.trim() }));
     loadPosts(data.id);
+    subscribeToBoard(data.id);
   };
 
   const loadPosts = async (boardId: string) => {
@@ -39,7 +82,7 @@ const StudentBoard = () => {
       .from("board_posts")
       .select(`
         *,
-        board_likes(count),
+        board_likes(id, display_name),
         board_comments(*)
       `)
       .eq("board_id", boardId)
@@ -47,9 +90,52 @@ const StudentBoard = () => {
     setPosts(data ?? []);
   };
 
-  const like = async (postId: string) => {
-    await supabase.from("board_likes").insert({ post_id: postId, display_name: name });
-    loadPosts(board.id);
+  const normalizeName = (value: string) => value.trim().toLowerCase();
+
+  const getStudentLike = (post: any) => {
+    const studentName = normalizeName(name);
+    return post.board_likes?.find((like: any) => normalizeName(like.display_name) === studentName);
+  };
+
+  const toggleLike = async (post: any, isDoubleClick = false) => {
+    if (!board || likingPostIds.has(post.id)) return;
+
+    const displayName = name.trim();
+    if (!displayName) return toast.error("Please enter your name before liking");
+
+    const existingLike = getStudentLike(post);
+    
+    // If double clicking and already liked, just show animation but don't unlike
+    if (isDoubleClick && existingLike) {
+      showAnimation(post.id);
+      return;
+    }
+
+    if (isDoubleClick) showAnimation(post.id);
+
+    setLikingPostIds(current => new Set(current).add(post.id));
+
+    // Use post_id and display_name for the delete query to be more robust than just ID
+    const { error } = existingLike
+      ? await supabase.from("board_likes").delete().match({ post_id: post.id, display_name: displayName })
+      : await supabase.from("board_likes").insert({ post_id: post.id, display_name: displayName });
+
+    if (error) {
+      toast.error(existingLike ? "Could not remove like" : "Could not like this PDF");
+    } else {
+      loadPosts(board.id);
+    }
+
+    setLikingPostIds(current => {
+      const next = new Set(current);
+      next.delete(post.id);
+      return next;
+    });
+  };
+
+  const showAnimation = (postId: string) => {
+    setAnimatingPostId(postId);
+    setTimeout(() => setAnimatingPostId(null), 800);
   };
 
   const comment = async (postId: string, text: string) => {
@@ -69,29 +155,29 @@ const StudentBoard = () => {
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Student Access</h1>
             <p className="text-slate-500 mt-2">Join your teacher's session</p>
           </div>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-slate-600">Access Code</Label>
-              <Input 
-                placeholder="XXXX" 
-                value={code} 
+              <Input
+                placeholder="XXXX"
+                value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
-                className="h-12 text-center text-xl font-bold tracking-widest uppercase rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20" 
+                className="h-12 text-center text-xl font-bold tracking-widest uppercase rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-slate-600">Your Name</Label>
-              <Input 
-                placeholder="e.g. Alex Smith" 
-                value={name} 
+              <Input
+                placeholder="e.g. Alex Smith"
+                value={name}
                 onChange={e => setName(e.target.value)}
-                className="h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20" 
+                className="h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20"
               />
             </div>
-            <Button 
-              onClick={enter} 
-              disabled={loading} 
+            <Button
+              onClick={enter}
+              disabled={loading}
               className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? "Joining..." : "Enter Class Board"}
@@ -134,8 +220,22 @@ const StudentBoard = () => {
           </Card>
         ) : (
           <div className="space-y-6">
-            {posts.map(p => (
-              <Card key={p.id} className="overflow-hidden border-2 border-border/50 shadow-sm hover:shadow-md transition-shadow bg-white rounded-3xl">
+            {posts.map(p => {
+              const studentLike = getStudentLike(p);
+              const likeCount = (p as any).board_likes?.length || 0;
+
+              return (
+              <Card 
+                key={p.id} 
+                onDoubleClick={() => toggleLike(p, true)}
+                className="overflow-hidden border-2 border-border/50 shadow-sm hover:shadow-md transition-shadow bg-white rounded-3xl relative"
+              >
+                {/* Floating Heart Animation Overlay */}
+                {animatingPostId === p.id && (
+                  <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none animate-in zoom-in-50 fade-in duration-300">
+                    <Heart className="h-24 w-24 text-rose-500 fill-rose-500 opacity-80 animate-bounce" />
+                  </div>
+                )}
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -143,7 +243,7 @@ const StudentBoard = () => {
                       <p className="text-slate-500 text-sm mt-1">{p.description}</p>
                     </div>
                     {p.file_url && (
-                      <a href={p.file_url} target="_blank" rel="noopener" 
+                      <a href={p.file_url} target="_blank" rel="noopener"
                         className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors text-sm font-semibold">
                         <FileText className="h-4 w-4" /> View PDF
                       </a>
@@ -151,14 +251,21 @@ const StudentBoard = () => {
                   </div>
 
                   <div className="flex items-center gap-6 pt-4 border-t border-slate-100 mt-4">
-                    <button 
-                      onClick={() => like(p.id)}
-                      className="flex items-center gap-2 text-slate-600 hover:text-rose-500 transition-colors group"
+                    <button
+                      onClick={() => toggleLike(p)}
+                      disabled={likingPostIds.has(p.id)}
+                      className={`flex items-center gap-2 transition-colors group disabled:opacity-60 ${
+                        studentLike ? "text-rose-500" : "text-slate-600 hover:text-rose-500"
+                      }`}
+                      aria-pressed={Boolean(studentLike)}
+                      aria-label={studentLike ? "Remove like" : "Like PDF"}
                     >
-                      <div className="h-8 w-8 rounded-full bg-slate-100 group-hover:bg-rose-50 flex items-center justify-center transition-colors">
-                        <Heart className="h-4 w-4" />
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+                        studentLike ? "bg-rose-50" : "bg-slate-100 group-hover:bg-rose-50"
+                      }`}>
+                        <Heart className={`h-4 w-4 ${studentLike ? "fill-rose-500" : ""}`} />
                       </div>
-                      <span className="font-bold text-sm">{(p as any).board_likes?.[0]?.count || 0}</span>
+                      <span className="font-bold text-sm">{likeCount}</span>
                     </button>
                     <div className="flex items-center gap-2 text-slate-600">
                       <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center">
@@ -177,11 +284,11 @@ const StudentBoard = () => {
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="flex gap-2 pt-2">
-                      <Input 
+                      <Input
                         id={`comment-${p.id}`}
-                        placeholder="Write a comment..." 
+                        placeholder="Write a comment..."
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             const val = (e.target as HTMLInputElement).value;
@@ -193,7 +300,7 @@ const StudentBoard = () => {
                         }}
                         className="rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 h-11"
                       />
-                      <Button 
+                      <Button
                         onClick={() => {
                           const input = document.getElementById(`comment-${p.id}`) as HTMLInputElement;
                           if (input && input.value.trim()) {
@@ -201,7 +308,7 @@ const StudentBoard = () => {
                             input.value = "";
                           }
                         }}
-                        size="icon" 
+                        size="icon"
                         className="h-11 w-11 shrink-0 rounded-xl bg-primary shadow-lg shadow-primary/20"
                       >
                         <Send className="h-4 w-4 text-white" />
@@ -210,7 +317,8 @@ const StudentBoard = () => {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

@@ -59,6 +59,7 @@ const AdminDashboard = () => {
   const [showStudents, setShowStudents] = useState(false);
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [targetUser, setTargetUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -155,13 +156,19 @@ const AdminDashboard = () => {
     loadData();
   };
 
-  const deleteUser = async (userId: string) => {
-    if (!window.confirm("Are you sure? This will delete the user's profile.")) return;
-    const { error } = await supabase.from("profiles").delete().eq("user_id", userId);
+  const deleteUser = (user: UserProfile) => {
+    setTargetUser(user);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!targetUser) return;
+    const { error } = await supabase.from("profiles").delete().eq("user_id", targetUser.user_id);
     if (error) return toast.error(error.message);
     
-    await logActivity(currentUser!.id, "deleted_user", { target_id: userId });
+    await logActivity(currentUser!.id, "deleted_user", { target_id: targetUser.user_id });
     toast.success("User profile deleted");
+    setShowDeleteDialog(false);
     loadData();
   };
 
@@ -357,7 +364,7 @@ const AdminDashboard = () => {
                       >
                         <Ban className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-rose-500" onClick={() => deleteUser(u.user_id)} title="Delete Profile">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-rose-500" onClick={() => deleteUser(u)} title="Delete Profile">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
@@ -443,6 +450,27 @@ const AdminDashboard = () => {
                 Yes, {targetUser?.is_blocked ? "Unblock User" : "Block User"}
               </Button>
               <Button variant="ghost" onClick={() => setShowBlockDialog(false)} className="w-full text-slate-400">Cancel</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete User Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="rounded-3xl border-0 max-w-sm p-8">
+            <DialogHeader className="text-center items-center">
+              <div className="h-16 w-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 mb-4">
+                <Trash2 className="h-8 w-8" />
+              </div>
+              <DialogTitle className="text-2xl font-display font-bold">Delete User?</DialogTitle>
+              <DialogDescription className="text-slate-500 mt-2">
+                Are you sure you want to delete <span className="font-bold text-slate-700">{targetUser?.first_name} {targetUser?.last_name}</span>? This action cannot be undone and will remove all their profile data.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-col gap-2 mt-6">
+              <Button onClick={confirmDelete} variant="destructive" className="w-full h-12 rounded-xl font-bold text-lg transition-all hover:scale-[1.02]">
+                Yes, Delete Profile
+              </Button>
+              <Button variant="ghost" onClick={() => setShowDeleteDialog(false)} className="w-full text-slate-400">Cancel</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

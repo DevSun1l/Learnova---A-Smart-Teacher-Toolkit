@@ -27,7 +27,14 @@ type SubTool = "menu" | "behaviorism" | "cognitivism" | "constructivism" | "soci
 const Behavioral = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") as SubTool;
-  const [tool, setTool] = useState<SubTool>(initialTab || "menu");
+  const [tool, setTool] = useState<SubTool>(() => {
+    if (initialTab) return initialTab;
+    return (localStorage.getItem("last_behavioral_tool") as SubTool) || "menu";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("last_behavioral_tool", tool);
+  }, [tool]);
 
   if (tool === "menu") {
     const items = [
@@ -354,7 +361,13 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
   const loadBoard = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase.from("class_boards").select("*").eq("teacher_id", user.id).maybeSingle();
+    const { data } = await supabase
+      .from("class_boards")
+      .select("*")
+      .eq("teacher_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     if (data) {
       setBoard(data);
       loadPosts(data.id);
@@ -377,15 +390,51 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
     setPosts(data ?? []);
   };
 
-  useEffect(() => { loadBoard(); }, [user]);
+  useEffect(() => { 
+    loadBoard(); 
+    
+    // Set up real-time subscription for the current board if it exists
+    let channel: any;
+    if (board?.id) {
+      channel = supabase
+        .channel(`teacher_board_${board.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'board_likes' }, () => loadPosts(board.id))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'board_comments' }, () => loadPosts(board.id))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'board_posts', filter: `board_id=eq.${board.id}` }, () => loadPosts(board.id))
+        .subscribe();
+    }
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [user, board?.id]);
+
+  const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
   const activate = async () => {
     if (!user) return;
-    const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-    
-    // Delete existing board if any (to reset code)
-    if (board) await supabase.from("class_boards").delete().eq("id", board.id);
-    
+
+    if (board) {
+      toast.success("Social Board is already active");
+      return;
+    }
+
+    const { data: existingBoard } = await supabase
+      .from("class_boards")
+      .select("*")
+      .eq("teacher_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingBoard) {
+      setBoard(existingBoard);
+      loadPosts(existingBoard.id);
+      toast.success("Social Board is active");
+      return;
+    }
+
+    const code = generateCode();
     const { data, error } = await supabase.from("class_boards").insert({ 
       teacher_id: user.id, 
       name: "Today's Lesson Board", 
@@ -397,9 +446,25 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
     toast.success("Social Board Activated!");
   };
 
+  const resetCode = async () => {
+    if (!user || !board) return;
+
+    const { data, error } = await supabase
+      .from("class_boards")
+      .update({ code: generateCode() })
+      .eq("id", board.id)
+      .eq("teacher_id", user.id)
+      .select()
+      .single();
+
+    if (error) return toast.error("Failed to reset code");
+    setBoard(data);
+    toast.success("Code reset");
+  };
+
   const clearBoard = async () => {
     if (!user || !board) return;
-    const { error } = await supabase.from("class_boards").delete().eq("id", board.id);
+    const { error } = await supabase.from("class_boards").delete().eq("teacher_id", user.id);
     if (error) return toast.error("Failed to clear board");
     setBoard(null);
     setPosts([]);
@@ -407,33 +472,46 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !board || !user) return;
-    if (file.type !== "application/pdf") return toast.error("Only PDFs allowed");
+    const files = e.target.files;
+    if (!files || files.length === 0 || !board || !user) return;
+    
+    const pdfFiles = Array.from(files).filter(f => f.type === "application/pdf");
+    if (pdfFiles.length === 0) return toast.error("Only PDFs allowed");
 
     setUploading(true);
-    const fileName = `${user.id}/${Math.random()}-${file.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("board-uploads")
-      .upload(fileName, file);
+    let successCount = 0;
 
-    if (uploadError) {
-      setUploading(false);
-      return toast.error("Upload failed");
+    for (const file of pdfFiles) {
+      try {
+        const fileName = `${user.id}/${Math.random()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("board-uploads")
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from("board-uploads").getPublicUrl(fileName);
+
+        await supabase.from("board_posts").insert({
+          board_id: board.id,
+          teacher_id: user.id,
+          title: file.name,
+          file_url: publicUrl,
+        });
+        successCount++;
+      } catch (err) {
+        console.error("Upload error:", err);
+        toast.error(`Failed to upload ${file.name}`);
+      }
     }
 
-    const { data: { publicUrl } } = supabase.storage.from("board-uploads").getPublicUrl(fileName);
-
-    await supabase.from("board_posts").insert({
-      board_id: board.id,
-      teacher_id: user.id,
-      title: file.name,
-      file_url: publicUrl,
-    });
-
-    loadPosts(board.id);
+    if (successCount > 0) {
+      loadPosts(board.id);
+      toast.success(`Successfully uploaded ${successCount} file(s)!`);
+    }
     setUploading(false);
-    toast.success("File uploaded!");
+    // Clear input
+    e.target.value = "";
   };
 
   const deletePost = async (id: string, fileUrl: string | null) => {
@@ -459,7 +537,7 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
         </div>
         {board && (
           <div className="flex gap-2">
-            <Button onClick={activate} variant="outline" className="rounded-xl gap-2 text-slate-600 border-slate-200">
+            <Button onClick={resetCode} variant="outline" className="rounded-xl gap-2 text-slate-600 border-slate-200">
               <Share2 className="h-4 w-4" /> Reset Code
             </Button>
             <Button onClick={clearBoard} variant="outline" className="rounded-xl gap-2 text-rose-600 border-rose-100 hover:bg-rose-50">
@@ -477,11 +555,11 @@ const SocialLearning = ({ onBack }: { onBack: () => void }) => {
                 <h3 className="font-display text-2xl mb-4 text-indigo-900">Upload Resources</h3>
                 <p className="text-sm text-indigo-700/70 mb-6 max-w-md italic">Upload lesson PDFs for students to view, like, and discuss in real-time.</p>
                 <div className="relative group">
-                  <input type="file" onChange={handleUpload} accept=".pdf" className="hidden" id="pdf-upload" disabled={uploading} />
+                  <input type="file" onChange={handleUpload} accept=".pdf" multiple className="hidden" id="pdf-upload" disabled={uploading} />
                   <label htmlFor="pdf-upload" className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-indigo-200 rounded-2xl bg-white/50 cursor-pointer hover:bg-white hover:border-indigo-400 transition-all ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <Upload className={`h-8 w-8 text-indigo-400 mb-2 ${uploading ? 'animate-bounce' : ''}`} />
-                      <p className="text-sm font-semibold text-indigo-600">{uploading ? "Uploading..." : "Click to upload a PDF"}</p>
+                      <p className="text-sm font-semibold text-indigo-600">{uploading ? "Uploading resources..." : "Click to upload one or more PDFs"}</p>
                     </div>
                   </label>
                 </div>
